@@ -1,0 +1,25 @@
+{
+  "name": "React Extension",
+  "version": "0.1.0",
+  "description": "Saving timestamps in YT videos",
+  "permissions": ["storage", "tabs", "identity", "identity.email"],
+  "host_permissions": ["https://*.youtube.com/*"],
+  "background": {
+    "service_worker": "./static/js/background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://*.youtube.com/*"],
+      "js": ["./static/js/content.js"]
+    }
+  ],
+  "action": {
+    "default_title": "React Extension",
+    "default_popup": "index.html"
+  },
+  "oauth2": {
+    "client_id": "452387761121-c9952bqaco1eikp658ell0a66ggbiivn.apps.googleusercontent.com",
+    "scopes":["https://www.googleapis.com/auth/userinfo.email", "https://www.googleapis.com/auth/userinfo.profile"]
+  },
+  "manifest_version": 3
+}
