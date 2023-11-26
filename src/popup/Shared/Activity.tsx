@@ -1,6 +1,5 @@
 import moment from 'moment';
 import { useEffect, useState } from 'react';
-import { isKeyObject } from 'util/types';
 
 interface ActivityProps {
     index: number,
@@ -10,43 +9,59 @@ interface ActivityProps {
     video: {
         id: string,
         time: number,
-        active: boolean
+        active: boolean,
+        lastUpdate: number
     }
 }
 
 interface VideoDataProps {
-    id: string,
-    time: number,
-    active: boolean,
     title: string,
     chanelTitle: string,
     duration: number
 }
 
 const Activity: React.FC<ActivityProps> = ({firstname, lastname, image, video, index}) => {
-    const [videoData, setVideoData] = useState<any>(getInitialData("FriendData_" + index));
-    const [videoTime, setVideotime] = useState<number>(getInitialTime("FriendTime_" + index));
-    let timeInterval: ReturnType<typeof setInterval>;
+    const [videoData, setVideoData] = useState<VideoDataProps | null>(null);
+    const [videoTime, setVideotime] = useState(() => {
+        return video.active ? video.time + (Math.floor((Date.now() - video.lastUpdate) / 1000)) : video.time;
+    });
 
     useEffect(() => {
-        if (videoData === null || videoData.id !== video.id || videoData.time !== video.time || videoData.active !== video.active) {
-            fetchData(setVideoData, video.id, video.time, video.active, index);
+        fetch(`https://www.googleapis.com/youtube/v3/videos?id=${video.id}&part=contentDetails,snippet&key=AIzaSyAAU6ke-0Mu7FuLQRUhnOcW5K3W-G_W7Cc`)
+            .then((res) => res.json())
+            .then((data) => {
+                const videoDataRaw: VideoDataProps = {
+                    title: data.items[0].snippet.title.slice(0, 33) + '...',
+                    chanelTitle: data.items[0].snippet.channelTitle,
+                    duration: data.items[0].contentDetails.duration
+                }
+                setVideoData(videoDataRaw);
+                localStorage.setItem('FriendData_' + index, JSON.stringify(videoDataRaw));
+            });
 
-            if (!video.active) {
-                clearInterval(timeInterval);
-                setVideotime(video.time);
-                return;
-            }
+    }, [video.id]);
 
-            setVideotime(video.time);
+    useEffect(() => {
+        setVideotime(video.active ? video.time + (Math.floor((Date.now() - video.lastUpdate) / 1000)) : video.time);
+
+        let timeInterval: ReturnType<typeof setInterval> | undefined;
+
+        if (video.active) {
+            timeInterval = setInterval(() => {
+                setVideotime((prevTime) => prevTime + 1);
+              }, 1000);
+        } else {
+            clearInterval(timeInterval);
         }
 
-        clearInterval(timeInterval);
-
-        timeInterval = setInterval(() => {
-            setVideotime(videoTime + 1);
-        }, 1000);
+        return () => {
+            clearInterval(timeInterval);
+        };
         
+    }, [video.active, video.time]);
+
+    useEffect(() => {
+        setVideotime(video.active ? video.time + (Math.floor((Date.now() - video.lastUpdate) / 1000)) : video.time);
     }, []);
 
     if (videoData === null) {
@@ -91,35 +106,5 @@ const getTime = (t : number) => {
   
     return date.toISOString().substr(11, 8);
   };
-
-function getInitialData(key: string) {
-    const data = localStorage.getItem(key);
-    if (data === null) return null;
-    return JSON.parse(data);
-  }
-
-  function getInitialTime(key: string) {
-    const data = localStorage.getItem(key);
-    if (data === null) return 0;
-    return Number(data);
-  }
-
-  function fetchData(setVideoData: (Object: VideoDataProps) => void, videoId: string, videoTime: number, videoActive: boolean, index: number) {
-    fetch(`https://www.googleapis.com/youtube/v3/videos?id=${videoId}&part=contentDetails,snippet&key=AIzaSyAAU6ke-0Mu7FuLQRUhnOcW5K3W-G_W7Cc`)
-            .then((res) => res.json())
-            .then((data) => {
-                const videoDataRaw: VideoDataProps = {
-                    id: videoId,
-                    time: videoTime,
-                    active: videoActive,
-                    title: data.items[0].snippet.title.slice(0, 33) + '...',
-                    chanelTitle: data.items[0].snippet.channelTitle,
-                    duration: data.items[0].contentDetails.duration
-                }
-                setVideoData(videoDataRaw);
-                localStorage.setItem('FriendData_' + index, JSON.stringify(videoDataRaw));
-            });
-  }
-  
 
 export default Activity;

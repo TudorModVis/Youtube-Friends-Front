@@ -2,7 +2,11 @@
   "name": "React Extension",
   "version": "0.1.0",
   "description": "Saving timestamps in YT videos",
-  "permissions": ["storage", "tabs", "identity", "identity.email"],
+  "permissions": ["storage", "tabs", "identity", "identity.email", {"sockets": {
+    "tcp": {
+      "connect": "127.0.0.1:4030"
+    }
+}}],
   "host_permissions": ["https://*.youtube.com/*"],
   "background": {
     "service_worker": "./static/js/background.js"
