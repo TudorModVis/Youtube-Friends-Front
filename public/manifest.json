@@ -1,13 +1,11 @@
 {
-  "name": "React Extension",
-  "version": "0.1.0",
-  "description": "Saving timestamps in YT videos",
-  "permissions": ["storage", "tabs", "identity", "identity.email", {"sockets": {
-    "tcp": {
-      "connect": "127.0.0.1:4030"
-    }
-}}],
-  "host_permissions": ["https://*.youtube.com/*"],
+  "name": "ViZBLE",
+  "version": "0.1.1",
+  "description": "A fun app for those that want to connect with their friends via Youtube.",
+  "permissions": ["storage", "tabs", "identity", "cookies"],
+  "host_permissions": [
+    "https://youtube-friends.onrender.com/*"
+  ],
   "background": {
     "service_worker": "./static/js/background.js"
   },
@@ -17,12 +15,18 @@
       "js": ["./static/js/content.js"]
     }
   ],
+  "icons": {
+    "16": "./images/icons/icon16.png",
+    "32": "./images/icons/icon32.png",
+    "48": "./images/icons/icon48.png",
+    "128": "./images/icons/icon128.png"
+  },
   "action": {
-    "default_title": "React Extension",
+    "default_title": "ViZBLE",
     "default_popup": "index.html"
   },
   "oauth2": {
-    "client_id": "452387761121-c9952bqaco1eikp658ell0a66ggbiivn.apps.googleusercontent.com",
+    "client_id": "452387761121-qd7jls2a56srfh8pqkj39to743dtjg87.apps.googleusercontent.com",
     "scopes":["https://www.googleapis.com/auth/userinfo.email", "https://www.googleapis.com/auth/userinfo.profile"]
   },
   "manifest_version": 3

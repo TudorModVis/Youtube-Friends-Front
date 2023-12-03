@@ -1,42 +1,51 @@
 import './App.css';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 import FriendsActivity from '../FriendsActivity/FriendsActivity';
 import LogIn from '../LogIn/LogIn';
-
-const browser = require("webextension-polyfill");
+import { storage } from 'webextension-polyfill';
 
 const App: React.FC = () => {
-  const [status, setStatus] = useState(('logged-in'));
+  const [loggedIn, setLoggedIn] = useState(true);
   const [isChecking, setChecking] = useState(true);
-  
 
-  browser.identity.getAuthToken({interactive: false}, function(token : string) {
-    if (browser.runtime.lastError) {
-      setChecking(false);
-      setStatus('logged-out');
-    } else {
-      setChecking(false);
-    }
+  useEffect(() => {
+    fetch('https://youtube-friends.onrender.com/api/check-user')
+    .then((res) =>  {
+      if (res.status === 401) {
+        setChecking(false)
+        setLoggedIn(false)
+      } else {
+        storage.local.get('userData').then(user => {
+          if (user.userData === undefined) {
+            fetch('https://youtube-friends.onrender.com/api/get-user').then(res => res.json()).then(data => {
+              storage.local.set({
+                "userData" : JSON.stringify(data)
+              });
+              setChecking(false)
+            });
 
-    // var url = 'https://accounts.google.com/o/oauth2/revoke?token=' + token;
-    // window.fetch(url);
-
-    // browser.identity.removeCachedAuthToken({token: token}, function (){
-    //   alert('removed');
-    // });
-
-  });
+          } else {
+            setChecking(false)
+          }
+        })
+      }
+    })
+      .catch(error => {
+        console.error("User is not logged in");
+      });
+  }, []);
 
   if (isChecking) {
     return <div>Checking...</div>
   }
 
-  if (status === 'logged-out') {
-    return <LogIn setStatus={setStatus} />
-  } else {
-    return <FriendsActivity />
-  }
+  if (!loggedIn) {
+    return <LogIn setLoggedIn={setLoggedIn} />
+  } 
+
+  return <FriendsActivity />
+  
 }
 
 export default App;

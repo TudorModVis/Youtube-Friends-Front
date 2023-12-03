@@ -1,8 +1,10 @@
+import { storage } from 'webextension-polyfill';
+import { AspectRatio, Skeleton } from '@mui/joy';
 import moment from 'moment';
 import { useEffect, useState } from 'react';
+import VideoPlaceholder from './VideoPlaceholder';
 
 interface ActivityProps {
-    index: number,
     firstname: string,
     lastname: string | undefined,
     image: string
@@ -10,34 +12,52 @@ interface ActivityProps {
         id: string,
         time: number,
         active: boolean,
-        lastUpdate: number
-    }
+        lastUpdate: number,
+    },
 }
 
 interface VideoDataProps {
+    id: string,
     title: string,
     chanelTitle: string,
     duration: number
 }
 
-const Activity: React.FC<ActivityProps> = ({firstname, lastname, image, video, index}) => {
+const Activity: React.FC<ActivityProps> = ({firstname, lastname, image, video}) => {
     const [videoData, setVideoData] = useState<VideoDataProps | null>(null);
     const [videoTime, setVideotime] = useState(() => {
         return video.active ? video.time + (Math.floor((Date.now() - video.lastUpdate) / 1000)) : video.time;
     });
 
     useEffect(() => {
-        fetch(`https://www.googleapis.com/youtube/v3/videos?id=${video.id}&part=contentDetails,snippet&key=AIzaSyAAU6ke-0Mu7FuLQRUhnOcW5K3W-G_W7Cc`)
+        if (video.id === '') return;
+
+        storage.local.get('videoData').then((data) => {
+
+            if (data.videoData !== undefined) {
+                const rawData = JSON.parse(data.videoData);
+                if (rawData.id === video.id) {
+                    setVideoData(rawData);
+                    return;
+                }
+            }
+            
+            fetch(`https://www.googleapis.com/youtube/v3/videos?id=${video.id}&part=contentDetails,snippet&key=AIzaSyAAU6ke-0Mu7FuLQRUhnOcW5K3W-G_W7Cc`)
             .then((res) => res.json())
             .then((data) => {
                 const videoDataRaw: VideoDataProps = {
-                    title: data.items[0].snippet.title.slice(0, 33) + '...',
+                    id: video.id,
+                    title: data.items[0].snippet.title.slice(0, 31) + '...',
                     chanelTitle: data.items[0].snippet.channelTitle,
                     duration: data.items[0].contentDetails.duration
                 }
                 setVideoData(videoDataRaw);
-                localStorage.setItem('FriendData_' + index, JSON.stringify(videoDataRaw));
+                storage.local.set({
+                    "videoData" : JSON.stringify(videoDataRaw)
+                });
             });
+
+        });
 
     }, [video.id]);
 
@@ -64,8 +84,18 @@ const Activity: React.FC<ActivityProps> = ({firstname, lastname, image, video, i
         setVideotime(video.active ? video.time + (Math.floor((Date.now() - video.lastUpdate) / 1000)) : video.time);
     }, []);
 
+    const openVideo = () => {
+        window.open(`https://www.youtube.com/watch?v=${video.id}&t=${videoTime}s`, "_blank")
+    }
+
+    if (video.id === '') {
+        return <></>;
+    }
+
     if (videoData === null) {
-        return <div>Loading...</div>
+        return(
+            <VideoPlaceholder />
+        );
     }
 
     const d = moment.duration(videoData.duration);
@@ -78,11 +108,11 @@ const Activity: React.FC<ActivityProps> = ({firstname, lastname, image, video, i
                 <div>
                     <div className="flex gap-2 items-center mb-4">
                         <img src="../images/yt-icon.svg" alt="youtube icon" className="w-8"/>
-                        <p>{videoData.chanelTitle}</p>
+                        <p className='text-sm'>{videoData.chanelTitle}</p>
                     </div>
                     <div className="flex gap-2 items-center mb-2">
                         <img src={image} alt="youtube icon" className="w-8 rounded-full"/>
-                        <p className="opacity-70 font-light">{lastname === undefined ? firstname : firstname + ' ' + lastname}</p>
+                        <p className="opacity-70 font-light text-sm">{lastname === undefined ? firstname : firstname + ' ' + lastname}</p>
                     </div>
                     <p className="font-semibold text-sm">{getTime(videoTime)}</p>
                     <div className="w-[12.5rem] h-1 bg-white bg-opacity-50 rounded-md">
@@ -93,7 +123,7 @@ const Activity: React.FC<ActivityProps> = ({firstname, lastname, image, video, i
                         <img src={video.active? "../images/logo.svg" : "../images/logo-gray.svg"} alt="logo modvis" className="w-3"/>
                     </div>
                 </div>
-                <img src={`https://img.youtube.com/vi/${video.id}/mqdefault.jpg`} alt="video thumbnail" className="h-[8.5rem] max-w-none rounded-md"/>
+                <img src={`https://img.youtube.com/vi/${video.id}/mqdefault.jpg`} alt="video thumbnail" className="h-[8.5rem] max-w-none rounded-md cursor-pointer" onClick={openVideo}/>
             </div>
             
         </div>

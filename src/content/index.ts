@@ -51,7 +51,7 @@ let timeInterval = setInterval(() => {}), lastTime = 0;
     if (videoId !== null) Object.assign(sendData, {videoId: videoId});
     if (videoActive !== undefined) Object.assign(sendData, {videoActive: videoActive});
 
-    fetch("http://localhost:4030/api/update-video", {
+    fetch("https://youtube-friends.onrender.com/api/update-video", {
       method: "POST",
       mode: "cors",
       headers: {
@@ -83,6 +83,5 @@ let timeInterval = setInterval(() => {}), lastTime = 0;
   });
 
   window.addEventListener('beforeunload', () => {
-    console.log('unload');
     newVideoLoaded(searchParams.get('v'), 'STOP-VIDEO')
   });

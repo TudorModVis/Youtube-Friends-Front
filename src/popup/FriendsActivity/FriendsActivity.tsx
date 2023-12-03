@@ -1,68 +1,75 @@
-import { storage, tabs } from 'webextension-polyfill';
-import { useState, useEffect, useCallback } from 'react';
+import { storage } from 'webextension-polyfill';
+import { useState, useEffect } from 'react';
+import { io, Socket } from 'socket.io-client';
+
+import Menu from './Menu';
 import Header from '../Shared/Header';
-import Title from '../Shared/Title';
-import Activity from '../Shared/Activity';
-import { io } from 'socket.io-client';
-
-
-interface Friend {
-  email: String,
-  firstname: string,
-  lastname: string | undefined,
-  image: string,
-  video: {
-    id: string,
-    time: number,
-    active: boolean,
-    lastUpdate: number
-  }
-}
+import Home from '../Home/Home';
+import AddFriends from '../AddFriends/AddFriends';
+import FriendRequests from '../FriendRequests/FriendRequests';
 
 const FriendsActivity: React.FC = () => {
   const [userData, setUserData] = useState<any>(null);
-  const [data, setData] = useState<any>(null);
+  const [socket, setSocket] = useState<Socket | null>(null)
+  // State to determine which page to render
+  const [page, setPage] = useState('home');
+  // State to track new friend requests
+  const [newFriendRequests, setNewFriendRequests] = useState(false);
 
   useEffect(() => {
     storage.local.get("userData").then((user) => {
       const rawUserData = JSON.parse(user.userData);
       setUserData(rawUserData);
-      const url = 'http://localhost:4030?id=' + rawUserData.id;
-      const socket = io(url);
-      socket.on('video-update', () => {
-        fetch(`http://localhost:4030/api/get-friends?id=${rawUserData.id}`)
-            .then((res) => res.json())
-            .then((data) => {
-              setData(data);
-            })
-            .catch(error => console.error('Error:', error));
-      });
-      socket.on('new-friend', (roomId) => {
-        console.log('new friend', roomId);
-          socket.emit('add-friend', roomId);
-      });
+      const url = 'https://youtube-friends.onrender.com/?id=' + rawUserData.id;
+      const localSocket = io(url);
+      setSocket(localSocket);
 
-      fetch(`http://localhost:4030/api/get-friends?id=${rawUserData.id}`)
-            .then((res) => res.json())
-            .then((data) => {
-              setData(data);
-            })
-            .catch(error => console.error('Error:', error));
+      const checkForNewRequests = () => {
+        fetch(`https://youtube-friends.onrender.com/api/check-received-requests?id=${rawUserData.id}`)
+        .then((res) => res.json())
+        .then((data) => {
+          setNewFriendRequests(data.check);
+        })
+          .catch(error => console.error('Error:', error));
+      }
+
+      checkForNewRequests();
+
+      localSocket.on('new-request-received', () => {
+        checkForNewRequests();
+      });
+      
     });
   }, []);
+
+  const setNewFriendRequestsToFalse = () => {
+    setNewFriendRequests(false);
+  }
   
-  if (userData === null || data === null) {
+  if (userData === null || socket === null) {
     return <div>Loading...</div>
   }
+
+  const pageToRender = () => {
+    switch (page) {
+      case 'add-friends': return(
+        <AddFriends userId={userData.id} socket={socket}/>
+      );
+      case 'home': return(
+        <Home socket={socket} userId={userData.id}/>
+      );
+      case 'friend-requests': return (
+        <FriendRequests userId={userData.id} socket={socket} setNewFriendRequestsToFalse={setNewFriendRequestsToFalse}/>
+      );
+    }
+  };
 
   return (
     <>
       <img src="../images/bg-light.png" alt="background color" className="absolute w-full h-full object-cover -z-10 left-0 top-0"/>
       <Header image={userData.image}/>
-      <Title title1="FRIEND ACTIVITIES" title2='ON YOUTUBE' subtitle="Be friends on youtube too"/>
-      {data.map((element: Friend, index: number) => {
-        return <Activity {...element} index={index} key={element.email.toString()}/>;
-      })}
+      {pageToRender()}
+      <Menu setPage={setPage} page={page} newFriendRequests={newFriendRequests}/>
     </>
   );
 }
