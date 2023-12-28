@@ -1,8 +1,8 @@
 {
-  "name": "ViZBLE",
-  "version": "0.1.1",
+  "name": "ViZBL",
+  "version": "0.1.2",
   "description": "A fun app for those that want to connect with their friends via Youtube.",
-  "permissions": ["storage", "tabs", "identity", "cookies"],
+  "permissions": ["storage", "tabs", "identity"],
   "host_permissions": [
     "https://youtube-friends.onrender.com/*"
   ],
@@ -22,7 +22,7 @@
     "128": "./images/icons/icon128.png"
   },
   "action": {
-    "default_title": "ViZBLE",
+    "default_title": "ViZBL",
     "default_popup": "index.html"
   },
   "oauth2": {

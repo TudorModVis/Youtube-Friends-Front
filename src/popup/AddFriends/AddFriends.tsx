@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import Title from '../Shared/Title';
 import SentRequest from './SentRequest';
 import { Socket } from 'socket.io-client';
+import { AutocompleteOption, Autocomplete, ListItemDecorator, ListItemContent, Typography } from '@mui/joy';
 
 interface AddFriendsParams {
     userId: string,
@@ -11,13 +12,31 @@ interface AddFriendsParams {
 interface Request {
     image: string,
     email: string,
-    firstname: string,
-    lastname: string | undefined,
+    name: string,
 }
 
 const AddFriends: React.FC<AddFriendsParams> = ({userId, socket}) => {
     const [email, setEmail] = useState('');
     const [requests, setRequests] = useState<Array<Request> | null>(null);
+    const [suggestions, setSuggestions] = useState<Array<Request>>([]);
+    const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+        if (loading || (email.length < 8 && !email.includes('@'))) {
+            setSuggestions([]);
+            return;
+        }
+        
+        setLoading(true);
+        fetch(`https://youtube-friends.onrender.com/api/get-email-suggestions?email=${email}`)
+        .then((res) => res.json())
+        .then((data) => {
+            setSuggestions(data);
+            setLoading(false);
+        })
+          .catch(error => console.error('Error:', error));
+        
+    }, [email]);
 
     useEffect(() => {
         const getRequests = () => {
@@ -63,13 +82,32 @@ const AddFriends: React.FC<AddFriendsParams> = ({userId, socket}) => {
                 <h3 className='mb-4 leading-none'>Add friend</h3>
                 <p className='mb-4 leading-none'>You can add friends with their email</p>
                 <form className='w-full' onSubmit={onFormSubmit}>
-                    <input 
-                        type='email' 
-                        name='email' 
-                        placeholder='You can add friends with their email' 
-                        className='w-full bg-semi-black border border-[#4C4C4C] rounded-md mb-8 p-3 focus:outline-none' 
-                        onChange={(e) => {setEmail(e.target.value)}}
-                    />
+                    <Autocomplete
+                        placeholder="Combo box"
+                        options={suggestions}
+                        sx={{ width: '100%', border: 1, borderColor: '#4C4C4C', marginBottom: '2rem' }}
+                        onInputChange={(event, value) => { setEmail(value) }}
+                        inputValue={email}
+                        getOptionLabel={(option) => option.email}
+                        renderOption={(props, option) => (
+                            <AutocompleteOption {...props}>
+                              <ListItemDecorator>
+                                <img
+                                  loading="lazy"
+                                  width="20"
+                                  src={option.image}
+                                  alt=""
+                                />
+                              </ListItemDecorator>
+                              <ListItemContent sx={{ fontSize: 'sm' }}>
+                                {option.name}
+                                <Typography level="body-xs">
+                                  ({option.email})
+                                </Typography>
+                              </ListItemContent>
+                            </AutocompleteOption>
+                          )}
+                     />
                     <input 
                         type="submit" 
                         value="Send friend request" 

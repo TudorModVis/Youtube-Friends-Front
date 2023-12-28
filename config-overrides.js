@@ -21,6 +21,35 @@ const overrideOutput = (config) => {
   return config
 }
 
+const overrideInjectRule = (config) => {
+  console.log('Customizing inject rule...');
+  // Find the style-loader rule
+  const styleLoaderRule = config.module.rules
+    .find((rule) => rule.oneOf)
+    .oneOf.find((oneOfRule) => oneOfRule.use && oneOfRule.use.find((loader) => loader.loader && loader.loader.includes('style-loader')));
+
+  if (styleLoaderRule && styleLoaderRule.use) {
+    // Update the inject property based on the filename
+    styleLoaderRule.use.forEach((loader) => {
+      if (loader.loader && loader.loader.includes('style-loader') && loader.options) {
+        console.log('Updating style-loader options...');
+        loader.options = {
+          ...loader.options,
+          injectType: 'styleTag',
+          inject: (resource) => {
+            const isMainJs = resource.endsWith('main.js');
+            console.log(`Injecting styles for ${resource}: ${isMainJs ? 'true' : 'false'}`);
+            return isMainJs;
+          },
+        };
+      }
+    });
+  }
+
+  return config;
+};
+
+
 module.exports = {
-  webpack: (config) => override(overrideEntry, overrideOutput)(config),
+  webpack: (config) => override(overrideEntry, overrideOutput, overrideInjectRule)(config),
 }

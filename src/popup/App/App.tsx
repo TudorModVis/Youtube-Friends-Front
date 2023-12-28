@@ -1,20 +1,17 @@
 import './App.css';
 import { useState, useEffect } from 'react';
+import { Navigate, useNavigate } from 'react-router-dom';
 
-import FriendsActivity from '../FriendsActivity/FriendsActivity';
-import LogIn from '../LogIn/LogIn';
 import { storage } from 'webextension-polyfill';
 
 const App: React.FC = () => {
-  const [loggedIn, setLoggedIn] = useState(true);
-  const [isChecking, setChecking] = useState(true);
+  const [isLoggedIn, setLoggedIn] = useState<boolean | null>(null);
 
   useEffect(() => {
     fetch('https://youtube-friends.onrender.com/api/check-user')
     .then((res) =>  {
       if (res.status === 401) {
-        setChecking(false)
-        setLoggedIn(false)
+        setLoggedIn(false);
       } else {
         storage.local.get('userData').then(user => {
           if (user.userData === undefined) {
@@ -22,30 +19,26 @@ const App: React.FC = () => {
               storage.local.set({
                 "userData" : JSON.stringify(data)
               });
-              setChecking(false)
             });
-
-          } else {
-            setChecking(false)
           }
-        })
+        });
+        setLoggedIn(true);
       }
     })
       .catch(error => {
-        console.error("User is not logged in");
+        console.error(error);
       });
   }, []);
 
-  if (isChecking) {
-    return <div>Checking...</div>
+  if (isLoggedIn === null) {
+    return <div>Checking...</div>;
   }
 
-  if (!loggedIn) {
-    return <LogIn setLoggedIn={setLoggedIn} />
-  } 
+  if (!isLoggedIn) {
+    return <Navigate to="/login" />;
+  }
 
-  return <FriendsActivity />
-  
+  return <Navigate to="/activity" />;
 }
 
 export default App;

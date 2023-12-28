@@ -9,7 +9,7 @@ interface FriendRequestsParams {
     setNewFriendRequestsToFalse: () => void
 }
 
-interface Request {
+interface RequestParams {
     image: string,
     email: string,
     firstname: string,
@@ -17,7 +17,7 @@ interface Request {
 }
 
 const FriendRequests: React.FC<FriendRequestsParams> = ({userId, socket, setNewFriendRequestsToFalse}) => {
-    const [requests, setRequests] = useState<Array<Request> | null>(null);
+    const [requests, setRequests] = useState<Array<RequestParams> | null>(null);
 
     useEffect(() => {
         const getRequests = () => {
@@ -55,7 +55,7 @@ const FriendRequests: React.FC<FriendRequestsParams> = ({userId, socket, setNewF
     return (
         <>
             <Title title1="FRIEND REQUESTS" title2='THAT YOU HAVE' subtitle="Be friends on youtube too"/>
-            {requests.map((element: Request) => {
+            {requests.map((element: RequestParams) => {
                 return <Request {...element} key={element.email.toString()} id={userId} updateRequests={updateRequests}/>;
             })}
         </>

@@ -1,3 +1,5 @@
+import { Socket } from 'dgram';
+import { io } from 'socket.io-client';
 import { storage, runtime } from 'webextension-polyfill'
 
 let timeInterval = setInterval(() => {}), lastTime = 0;
@@ -80,8 +82,64 @@ let timeInterval = setInterval(() => {}), lastTime = 0;
       clearInterval(timeInterval);
       return
     }
+
+    if (type === "ACTIVE" && !document.hidden) {
+      storage.local.get("userData").then((user) => {
+        const rawUserData = JSON.parse(user.userData);
+        const url = 'https://youtube-friends.onrender.com/?id=' + rawUserData.id + '&scope=emoji';
+        const socket = io(url);
+  
+        socket.on('emoji-received', createPopUp);
+      });
+    }
+  });
+
+  window.addEventListener('load', () => {
+    if (document.hidden) return;
+    storage.local.get("userData").then((user) => {
+      const rawUserData = JSON.parse(user.userData);
+      const url = 'https://youtube-friends.onrender.com/?id=' + rawUserData.id + '&scope=emoji';
+      const socket = io(url);
+
+      socket.on('emoji-received', createPopUp);
+    });
   });
 
   window.addEventListener('beforeunload', () => {
     newVideoLoaded(searchParams.get('v'), 'STOP-VIDEO')
   });
+
+  interface Message {
+    from: string,
+    emoji: string
+}
+
+  const createPopUp = (message: Message) => {
+    // Create the popup container
+    var popup = document.createElement('div');
+    popup.id = 'emoji';
+    popup.style.position = 'fixed';
+    popup.style.top = '10px';
+    popup.style.right = '10px';
+    popup.style.width = '200px';
+    popup.style.height = '100px';
+    popup.style.backgroundColor = '#f0f0f0';
+    popup.style.border = '1px solid #ccc';
+    popup.style.padding = '4px';
+    popup.style.boxShadow = '0 4px 6px rgba(0, 0, 0, 0.1)';
+    popup.style.zIndex = '9999';
+
+    // Create the text content
+    var text = document.createElement('p');
+    text.textContent = "You've got " + message.emoji + " from " + message.from;
+
+    // Append the text content to the popup container
+    popup.appendChild(text);
+
+    popup.addEventListener('click', () => {
+      popup.remove();
+    });
+
+    // Append the popup to the body
+    document.body.appendChild(popup);
+  }

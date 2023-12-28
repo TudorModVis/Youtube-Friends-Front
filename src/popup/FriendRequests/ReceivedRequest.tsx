@@ -26,7 +26,7 @@ const ReceivedRequest: React.FC<RequestParams> = ({image, firstname, lastname, i
     }
 
     const onRejectClick = () => {
-        fetch("https://youtube-friends.onrender.com/api/reject-friend", {
+        fetch("https://youtube-friends.onrender.com/api/reject-friend-request", {
         method: "POST",
         mode: "cors",
         headers: {

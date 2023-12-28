@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { io, Socket } from 'socket.io-client';
 
 import Menu from './Menu';
-import Header from '../Shared/Header';
+import Header from './Header';
 import Home from '../Home/Home';
 import AddFriends from '../AddFriends/AddFriends';
 import FriendRequests from '../FriendRequests/FriendRequests';
@@ -20,7 +20,7 @@ const FriendsActivity: React.FC = () => {
     storage.local.get("userData").then((user) => {
       const rawUserData = JSON.parse(user.userData);
       setUserData(rawUserData);
-      const url = 'https://youtube-friends.onrender.com/?id=' + rawUserData.id;
+      const url = 'https://youtube-friends.onrender.com/?id=' + rawUserData.id + '&scope=main';
       const localSocket = io(url);
       setSocket(localSocket);
 
@@ -56,7 +56,7 @@ const FriendsActivity: React.FC = () => {
         <AddFriends userId={userData.id} socket={socket}/>
       );
       case 'home': return(
-        <Home socket={socket} userId={userData.id}/>
+        <Home socket={socket} {...userData}/>
       );
       case 'friend-requests': return (
         <FriendRequests userId={userData.id} socket={socket} setNewFriendRequestsToFalse={setNewFriendRequestsToFalse}/>
@@ -66,7 +66,7 @@ const FriendsActivity: React.FC = () => {
 
   return (
     <>
-      <img src="../images/bg-light.png" alt="background color" className="absolute w-full h-full object-cover -z-10 left-0 top-0"/>
+      <img src="../images/header/bg-gradient.png" alt="background color" className="absolute w-full h-full object-cover -z-10 left-0 top-0"/>
       <Header image={userData.image}/>
       {pageToRender()}
       <Menu setPage={setPage} page={page} newFriendRequests={newFriendRequests}/>

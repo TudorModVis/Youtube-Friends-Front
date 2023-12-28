@@ -18,8 +18,14 @@ tabs.onActivated.addListener(() => {
   tabs.query({ active: true, currentWindow: true }).then((activeTabs) => {
     const activeTab = activeTabs[0];
 
+    if (!activeTab || activeTab.id === undefined) return;
+
+    tabs.sendMessage(activeTab.id, {
+      type: "ACTIVE",
+    });
+
     // Check if the active tab is a YouTube tab
-    if (activeTab && activeTab.url && activeTab.url.includes('youtube.com/watch') && activeTab.id !== undefined) {
+    if (activeTab.url && activeTab.url.includes('youtube.com/watch')) {
 
       const queryParameters = activeTab.url.split("?")[1];
       const urlParameters = new URLSearchParams(queryParameters);
@@ -31,7 +37,13 @@ tabs.onActivated.addListener(() => {
 
       tabs.query({}).then((allTabs) => {
         allTabs.forEach(function (tab) {
-          if (tab.id !== activeTab.id && tab.url && tab.url.includes('youtube.com/watch') && tab.id !== undefined) {
+          if (tab.id === activeTab.id || tab.id === undefined) return;
+
+          tabs.sendMessage(tab.id, {
+            type: "INACTIVE"
+          });
+
+          if (tab.url && tab.url.includes('youtube.com/watch')) {
             tabs.sendMessage(tab.id, {
               type: "STOP-VIDEO"
             });
